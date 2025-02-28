@@ -2,9 +2,9 @@ import asyncio
 from typing import Annotated
 import os
 
-print("Before importing dotenv")  # Add this line
+print("Before importing dotenv")
 from dotenv import load_dotenv
-print("After importing dotenv")  # Add this line
+print("After importing dotenv")
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -16,10 +16,8 @@ from livekit.agents.llm import (
     ChatMessage,
 )
 from livekit.agents.voice_assistant import VoiceAssistant
-from livekit.plugins import openai, silero
+from livekit.plugins import deepgram, openai, silero
 from screen_capture import capture_screen
-from deepgram import Deepgram
-
 
 class AssistantFunction(agents.llm.FunctionContext):
     """This class is used to define functions that will be called by the assistant."""
@@ -49,7 +47,6 @@ class AssistantFunction(agents.llm.FunctionContext):
         print(f"Message triggering vision capabilities: {user_msg}")
         return None
 
-
 async def get_video_track(room: rtc.Room):
     """Get the first video track from the room. We'll use this track to process images."""
 
@@ -66,7 +63,6 @@ async def get_video_track(room: rtc.Room):
 
     return await video_track
 
-
 async def get_audio_track(room: rtc.Room):
     """Get the first audio track from the room. We'll use this track to process audio."""
 
@@ -82,7 +78,6 @@ async def get_audio_track(room: rtc.Room):
                 break
 
     return await audio_track
-
 
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
@@ -111,12 +106,9 @@ async def entrypoint(ctx: JobContext):
 
     latest_image: rtc.VideoFrame | None = None
 
-    deepgram_api_key = os.getenv("DEEPGRAM_API_KEY")
-    deepgram_client = Deepgram(deepgram_api_key)
-
     assistant = VoiceAssistant(
         vad=silero.VAD.load(),  # We'll use Silero's Voice Activity Detector (VAD)
-        stt=deepgram_client,  # We'll use Deepgram's Speech To Text (STT)
+        stt=deepgram.STT(api_key=os.getenv("DEEPGRAM_API_KEY")),  # We'll use Deepgram's Speech To Text (STT)
         llm=gpt,
         tts=openai_tts,  # We'll use OpenAI's Text To Speech (TTS)
         fnc_ctx=AssistantFunction(),
@@ -177,7 +169,6 @@ async def entrypoint(ctx: JobContext):
         # Process audio track if needed
         # async for event in rtc.AudioStream(audio_track):
         #     # Handle audio events here
-
 
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
